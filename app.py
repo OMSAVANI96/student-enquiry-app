@@ -1,11 +1,10 @@
 from flask import Flask, request, render_template
 import requests
-import os
 
 app = Flask(__name__)
 
-TELEGRAM_BOT_TOKEN = os.environ.get('TELEGRAM_BOT_TOKEN')
-TELEGRAM_CHAT_ID = os.environ.get('TELEGRAM_CHAT_ID')
+# Direct webhook connection
+N8N_WEBHOOK_URL = "https://n8ntelebot.duckdns.org/webhook-test/558cba18-bdd2-4d54-ae96-b96bc0014404"
 
 @app.route('/')
 def index():
@@ -13,25 +12,17 @@ def index():
 
 @app.route('/submit', methods=['POST'])
 def submit():
-    message = "📢 *New Student Enquiry!*\n\n"
-    
+    form_data = {}
     for key, value in request.form.items():
         clean_key = key.replace('_', ' ').replace('-', ' ').title()
-        if value.strip(): 
-            message += f"*{clean_key}:* {value}\n"
+        if value.strip():
+            form_data[clean_key] = value
 
-    url = f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendMessage"
-    payload = {
-        "chat_id": TELEGRAM_CHAT_ID,
-        "text": message,
-        "parse_mode": "Markdown"
-    }
-    
     try:
-        requests.post(url, json=payload)
+        requests.post(N8N_WEBHOOK_URL, json=form_data)
         return "<h1>Success! Your enquiry has been sent.</h1><br><a href='/'>Go back</a>"
     except Exception as e:
-        return f"<h1>Error sending message.</h1><p>{str(e)}</p>"
+        return f"<h1>Error sending to automation.</h1><p>{str(e)}</p>"
 
 if __name__ == '__main__':
     app.run(debug=True, host='0.0.0.0')
