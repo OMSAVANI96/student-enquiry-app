@@ -1,10 +1,11 @@
 from flask import Flask, request, render_template
 import requests
+import re
 
 app = Flask(__name__)
 
-# Direct webhook connection
-N8N_WEBHOOK_URL = "https://n8ntelebot.duckdns.org/webhook-test/558cba18-bdd2-4d54-ae96-b96bc0014404"
+# The LIVE Production Webhook URL
+N8N_WEBHOOK_URL = "https://n8ntelebot.duckdns.org/webhook/558cba18-bdd2-4d54-ae96-b96bc0014404"
 
 @app.route('/')
 def index():
@@ -12,11 +13,14 @@ def index():
 
 @app.route('/submit', methods=['POST'])
 def submit():
-    form_data = {}
-    for key, value in request.form.items():
-        clean_key = key.replace('_', ' ').replace('-', ' ').title()
-        if value.strip():
-            form_data[clean_key] = value
+    form_data = {key: value for key, value in request.form.items() if value.strip()}
+    
+    # Phone Number Validation (Checks if fields with 'Number' have at least 10 digits)
+    for key, value in form_data.items():
+        if 'Number' in key or 'Phone' in key:
+            clean_num = re.sub(r'\D', '', value)
+            if len(clean_num) < 10:
+                return f"<h1>Error: {key} is invalid. Please enter a valid 10-digit number.</h1><br><a href='javascript:history.back()'>Go back</a>", 400
 
     try:
         requests.post(N8N_WEBHOOK_URL, json=form_data)
