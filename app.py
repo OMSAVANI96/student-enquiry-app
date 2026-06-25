@@ -13,9 +13,14 @@ def index():
 
 @app.route('/submit', methods=['POST'])
 def submit():
-    form_data = {key: value for key, value in request.form.items() if value.strip()}
+    # RESTORED: This automatically formats 'student_name' into 'Student Name' for n8n
+    form_data = {}
+    for key, value in request.form.items():
+        clean_key = key.replace('_', ' ').replace('-', ' ').title()
+        if value.strip():
+            form_data[clean_key] = value
     
-    # Phone Number Validation (Checks if fields with 'Number' have at least 10 digits)
+    # Phone Number Validation
     for key, value in form_data.items():
         if 'Number' in key or 'Phone' in key:
             clean_num = re.sub(r'\D', '', value)
